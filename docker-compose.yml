@@ -8,6 +8,11 @@ services:
       dockerfile: Python/Dockerfile
     ports:
       - "5000:5000"
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/irisdb
+  
   
   db:
     container_name: iris_db
@@ -19,6 +24,8 @@ services:
     volumes:
       - data_sql:/var/lib/postgresql/data 
       - ./Postgres/setup.sql:/docker-entrypoint-initdb.d/setup.sql
+    ports:
+      - "5432:5432"
 
 volumes:
   data_sql:
