@@ -2,6 +2,23 @@ version: '3.9'
 
 services:
   app:
-    build: .
+    container_name: flask_api
+    build:
+      context: .
+      dockerfile: Python/Dockerfile
     ports:
       - "5000:5000"
+  
+  db:
+    container_name: iris_db
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: irisdb
+    volumes:
+      - data_sql:/var/lib/postgresql/data 
+      - ./Postgres/setup.sql:/docker-entrypoint-initdb.d/setup.sql
+
+volumes:
+  data_sql:
