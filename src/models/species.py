@@ -3,6 +3,7 @@ from sqlalchemy import String
 from typing import List
 from .base import Base
 
+
 class Species(Base):  # <-- Inherit from Base
     __tablename__ = "species"
 
@@ -10,4 +11,11 @@ class Species(Base):  # <-- Inherit from Base
     name: Mapped[str] = mapped_column(String(255), unique=True)
 
     # Relationship
-    irises: Mapped[List["Iris"]] = relationship("Iris", back_populates="species")
+    irises: Mapped[List["Iris"]] = relationship(
+        "Iris", back_populates="species")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+        }

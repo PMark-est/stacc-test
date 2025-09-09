@@ -1,0 +1,457 @@
+openapi: 3.0.3
+info:
+  title: Iris API
+  version: 2.0.0
+  description: API to query Iris dataset, species, and statistics on measurements.
+
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+
+paths:
+  /species:
+    get:
+      summary: Get all species
+      description: Retrieve a list of all species.
+      responses:
+        '200':
+          description: A list of species
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    name:
+                      type: string
+
+  /iris/columns:
+    get:
+      summary: Get available Iris columns
+      description: Retrieve a list of all Iris measurement columns.
+      responses:
+        '200':
+          description: A list of column names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  /iris/{name}:
+    get:
+      summary: Get all Irises by species
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Species name (e.g., setosa, versicolor, virginica)
+      responses:
+        '200':
+          description: List of Iris objects for the species
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Iris'
+
+  /iris/{column}/larger_than:
+    get:
+      summary: Get Irises with values larger than a threshold
+      parameters:
+        - name: column
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: value
+          in: query
+          required: true
+          schema:
+            type: number
+          description: Threshold value
+        - name: n
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Optional limit of rows
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: species
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Optional species filter
+      responses:
+        '200':
+          description: List of Iris objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Iris'
+
+  /iris/{column}/smaller_than:
+    get:
+      summary: Get Irises with values smaller than a threshold
+      parameters:
+        - name: column
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: value
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: n
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: species
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Optional species filter
+      responses:
+        '200':
+          description: List of Iris objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Iris'
+
+  /iris/{column}/equal_to:
+    get:
+      summary: Get Irises with values equal to a specific number
+      parameters:
+        - name: column
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: value
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: n
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: species
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Optional species filter
+      responses:
+        '200':
+          description: List of Iris objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Iris'
+
+  /iris/{column}/top_n:
+    get:
+      summary: Get top N Irises by column
+      parameters:
+        - name: column
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: n
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: species
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Optional species filter
+      responses:
+        '200':
+          description: Top N Iris objects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Iris'
+
+  /iris/{column}/smallest:
+    get:
+      summary: Get smallest Iris by column
+      parameters:
+        - name: column
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: species
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Optional species filter
+      responses:
+        '200':
+          description: Smallest value of the column
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  column:
+                    type: string
+                  species:
+                    type: string
+                    nullable: true
+                  value:
+                    type: number
+    
+  /iris/{column}/largest:
+    get:
+      summary: Get largest Iris by column
+      parameters:
+        - name: column
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: species
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Optional species filter
+      responses:
+        '200':
+          description: Largest value of the column
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  column:
+                    type: string
+                  species:
+                    type: string
+                    nullable: true
+                  value:
+                    type: number
+  /iris/<column>/average:
+    get:
+      summary: Get average value of a column
+      parameters:
+        - name: column
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: species
+          in: query
+          required: false
+          schema:
+            type: string
+            description: Optional species filter
+      responses:
+        '200':
+          description: Average value for the column
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  column:
+                    type: string
+                  species:
+                    type: string
+                    nullable: true
+                  value:
+                    type: number
+
+  /iris/<column>/median:
+    get:
+      summary: Get median value of a column
+      parameters:
+        - name: column
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: species
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Median value for the column
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  column:
+                    type: string
+                  species:
+                    type: string
+                    nullable: true
+                  value:
+                    type: number
+
+  /iris/<column>/quantile:
+    get:
+      summary: Get quantile value of a column
+      parameters:
+        - name: column
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: number
+            minimum: 0
+            maximum: 1
+            description: Quantile between 0 and 1
+        - name: species
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quantile value for the column
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  column:
+                    type: string
+                  species:
+                    type: string
+                    nullable: true
+                  quantile:
+                    type: number
+                  value:
+                    type: number
+  /iris:
+    post:
+      summary: Add a new Iris
+      description: Create a new Iris entry. If the species does not exist, it will be created.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                species_name:
+                  type: string
+                  example: "setosa"
+                sepal_length:
+                  type: number
+                  example: 5.1
+                sepal_width:
+                  type: number
+                  example: 3.5
+                petal_length:
+                  type: number
+                  example: 1.4
+                petal_width:
+                  type: number
+                  example: 0.2
+              required:
+                - species_name
+                - sepal_length
+                - sepal_width
+                - petal_length
+                - petal_width
+      responses:
+        '201':
+          description: The created Iris object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Iris'
+
+components:
+  schemas:
+    Species:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+
+    Iris:
+      type: object
+      properties:
+        id:
+          type: integer
+        sepal_length:
+          type: number
+        sepal_width:
+          type: number
+        petal_length:
+          type: number
+        petal_width:
+          type: number
+        sepal_area:
+          type: number
+        petal_area:
+          type: number
+        sepal_to_petal_area_ratio:
+          type: number
+        sepal_to_petal_length_ratio:
+          type: number
+        sepal_to_petal_width_ratio:
+          type: number
+        species_id:
+          type: integer
+        species:
+          $ref: '#/components/schemas/Species'
