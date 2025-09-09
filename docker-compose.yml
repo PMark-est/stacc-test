@@ -23,7 +23,6 @@ services:
       POSTGRES_DB: irisdb
     volumes:
       - data_sql:/var/lib/postgresql/data 
-      - ./Postgres/setup.sql:/docker-entrypoint-initdb.d/setup.sql
     ports:
       - "5432:5432"
 

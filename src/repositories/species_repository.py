@@ -2,9 +2,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 from src.models import Species
 from typing import Optional, List
+from src.repositories.base_repository import BaseRepository
 
 
-class SpeciesRepository:
+class SpeciesRepository(BaseRepository):
     """
     A repository class for handling database operations for Species entities.
 
@@ -14,15 +15,6 @@ class SpeciesRepository:
     Attributes:
         db (Session): The SQLAlchemy database session used for all operations.
     """
-
-    def __init__(self, db: Session):
-        """
-        Initializes the SpeciesRepository with a database session.
-
-        Args:
-            db (Session): The SQLAlchemy database session instance.
-        """
-        self.db = db
 
     def get_count(self) -> int:
         """

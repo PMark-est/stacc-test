@@ -2,9 +2,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select, asc, desc
 from typing import List
 from src.models import Species, Iris
+from src.repositories.base_repository import BaseRepository
 
 
-class IrisRepository:
+class IrisRepository(BaseRepository):
     """
     A repository class for handling database operations for Iris entities.
 
@@ -15,15 +16,6 @@ class IrisRepository:
     Attributes:
         db (Session): The SQLAlchemy database session used for all operations.
     """
-
-    def __init__(self, db: Session):
-        """
-        Initializes the IrisRepository with a database session.
-
-        Args:
-            db (Session): The SQLAlchemy database session instance.
-        """
-        self.db = db
 
     def _get_iris_by_species_name(self, name: str, order: str, sort_column) -> List[Iris]:
         """
