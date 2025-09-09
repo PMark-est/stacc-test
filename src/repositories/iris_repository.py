@@ -59,7 +59,7 @@ class IrisRepository(BaseRepository):
         if limit is not None:
             stmt = stmt.limit(limit)
 
-        result = self.db.execute(stmt)
+        result = self.session.execute(stmt)
         return list(result.scalars().all())
 
     # ----------------- Convenience Methods -----------------
@@ -96,6 +96,7 @@ class IrisRepository(BaseRepository):
             n (int): Number of rows to retrieve.
             column: Column to sort by.
             order (str): 'asc' or 'desc' if column is provided.
+            species (str): name of species.
         """
         return self._query_by_column(column if column else Iris.id, ">", -float('inf'), order, limit=n, species=species)
 
@@ -117,7 +118,7 @@ class IrisRepository(BaseRepository):
         if species_name:
             stmt = stmt.where(Iris.species.has(name=species_name))
 
-        result = self.db.execute(stmt).scalar()
+        result = self.session.execute(stmt).scalar()
         return float(result) if result is not None else None
 
     def get_largest(self, column, species_name: str = None) -> Iris:
@@ -128,7 +129,7 @@ class IrisRepository(BaseRepository):
         if species_name:
             stmt = stmt.where(Iris.species.has(name=species_name))
 
-        result = self.db.execute(stmt).scalar()
+        result = self.session.execute(stmt).scalar()
         return float(result) if result is not None else None
 
     def get_average(self, column, species_name: str = None) -> float:
@@ -139,7 +140,7 @@ class IrisRepository(BaseRepository):
         if species_name:
             stmt = stmt.where(Iris.species.has(name=species_name))
 
-        result = self.db.execute(stmt).scalar()
+        result = self.session.execute(stmt).scalar()
         return float(result) if result is not None else None
 
     def get_median(self, column, species_name: str = None) -> float:
@@ -150,7 +151,7 @@ class IrisRepository(BaseRepository):
         if species_name:
             stmt = stmt.where(Iris.species.has(name=species_name))
 
-        results = [row[0] for row in self.db.execute(stmt).all()]
+        results = [row[0] for row in self.session.execute(stmt).all()]
         if not results:
             return None
         return float(np.median(results))
@@ -166,7 +167,7 @@ class IrisRepository(BaseRepository):
         if species_name:
             stmt = stmt.where(Iris.species.has(name=species_name))
 
-        results = [row[0] for row in self.db.execute(stmt).all()]
+        results = [row[0] for row in self.session.execute(stmt).all()]
         if not results:
             return None
         return float(np.quantile(results, q))
@@ -203,13 +204,13 @@ class IrisRepository(BaseRepository):
 
         # search for species by name, if doesn't exist create new
         species_name = species_name.lower()
-        species = self.db.execute(select(Species).where(
+        species = self.session.execute(select(Species).where(
             Species.name == species_name)).scalar_one_or_none()
         if not species:
             species = Species(name=species_name)
-            self.db.add(species)
-            self.db.commit()
-            self.db.refresh(species)
+            self.session.add(species)
+            self.session.commit()
+            self.session.refresh(species)
 
         iris = Iris(
             species_id=species.id,
@@ -223,7 +224,7 @@ class IrisRepository(BaseRepository):
             sepal_to_petal_length_ratio=sepal_to_petal_length_ratio,
             sepal_to_petal_width_ratio=sepal_to_petal_width_ratio
         )
-        self.db.add(iris)
-        self.db.commit()
-        self.db.refresh(iris)
+        self.session.add(iris)
+        self.session.commit()
+        self.session.refresh(iris)
         return iris

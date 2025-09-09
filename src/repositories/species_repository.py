@@ -27,7 +27,7 @@ class SpeciesRepository(BaseRepository):
             >>> repo.get_count()
             3
         """
-        return self.db.query(Species).count()
+        return self.session.query(Species).count()
 
     def get_all(self) -> List[Species]:
         """
@@ -41,7 +41,7 @@ class SpeciesRepository(BaseRepository):
             [<Species id=1, name='setosa'>, <Species id=2, name='versicolor'>, ...]
         """
         stmt = select(Species).order_by(Species.id)
-        result = self.db.execute(stmt)
+        result = self.session.execute(stmt)
         return list(result.scalars().all())
 
     def get_by_name(self, name: str) -> Optional[Species]:
@@ -59,7 +59,7 @@ class SpeciesRepository(BaseRepository):
             <Species id=1, name='setosa'>
         """
         # db.get() uses the primary key, so we need to query by name instead
-        return self.db.query(Species).filter(Species.name == name).first()
+        return self.session.query(Species).filter(Species.name == name).first()
 
     def get_by_id(self, species_id: int) -> Optional[Species]:
         """
@@ -75,7 +75,7 @@ class SpeciesRepository(BaseRepository):
             >>> repo.get_by_id(1)
             <Species id=1, name='setosa'>
         """
-        return self.db.get(Species, species_id)
+        return self.session.get(Species, species_id)
 
     def create(self, name: str) -> Species:
         """
@@ -99,9 +99,9 @@ class SpeciesRepository(BaseRepository):
             raise ValueError(f"Species with name '{name}' already exists")
 
         new_species = Species(name=name)
-        self.db.add(new_species)
-        self.db.commit()
-        self.db.refresh(new_species)
+        self.session.add(new_species)
+        self.session.commit()
+        self.session.refresh(new_species)
         return new_species
 
     def delete_by_id(self, species_id: int) -> bool:
@@ -120,8 +120,8 @@ class SpeciesRepository(BaseRepository):
         """
         species = self.get_by_id(species_id)
         if species:
-            self.db.delete(species)
-            self.db.commit()
+            self.session.delete(species)
+            self.session.commit()
             return True
         return False
 
@@ -141,7 +141,7 @@ class SpeciesRepository(BaseRepository):
         """
         species = self.get_by_name(name)
         if species:
-            self.db.delete(species)
-            self.db.commit()
+            self.session.delete(species)
+            self.session.commit()
             return True
         return False

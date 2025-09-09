@@ -4,9 +4,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import OperationalError
-
-from models.base import Base
-from src.models import Iris, Species
+from src.models import Iris, Species, Base
 
 
 def calculate_iris_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -84,12 +82,26 @@ def wait_for_db(max_retries: int = 30, retry_delay: int = 2):
         "Could not connect to database after multiple attempts")
 
 
-engine = wait_for_db()
-# Create tables if they don't exist
-Base.metadata.create_all(bind=engine)
-session = Session(engine)
+def get_engine():
+    database_url = os.getenv(
+        'DATABASE_URL', 'postgresql://postgres:postgres@db:5432/irisdb'
+    )
+    engine = create_engine(database_url)
+    Base.metadata.create_all(bind=engine)
+    return engine
 
-# Seed data if database is empty
-if session.query(Iris).first() is None:
-    load_iris_to_db(session)
-    print("🌱 Data seeded into database")
+
+def get_session(engine):
+    return Session(engine)
+
+
+def seed_if_empty(session):
+    if session.query(Iris).first() is None:
+        load_iris_to_db(session)
+        print("🌱 Data seeded into database")
+
+
+if __name__ == "__main__":
+    engine = get_engine()
+    session = get_session(engine)
+    seed_if_empty(session)

@@ -5,7 +5,7 @@ services:
     container_name: flask_api
     build:
       context: .
-      dockerfile: Python/Dockerfile
+      dockerfile: Dockerfile
     ports:
       - "5000:5000"
     depends_on:
@@ -25,6 +25,13 @@ services:
       - data_sql:/var/lib/postgresql/data 
     ports:
       - "5432:5432"
+
+  tests:
+    container_name: flask_tests
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: pytest -v tests/
 
 volumes:
   data_sql:
