@@ -124,24 +124,3 @@ class SpeciesRepository(BaseRepository):
             self.session.commit()
             return True
         return False
-
-    def delete_by_name(self, name: str) -> bool:
-        """
-        Deletes a Species entity by its name.
-
-        Args:
-            name (str): The name of the species to delete.
-
-        Returns:
-            bool: True if the species was found and deleted, False otherwise.
-
-        Example:
-            >>> repo.delete_by_name('new_species')
-            True
-        """
-        species = self.get_by_name(name)
-        if species:
-            self.session.delete(species)
-            self.session.commit()
-            return True
-        return False

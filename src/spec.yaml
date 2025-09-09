@@ -278,12 +278,12 @@ paths:
                     nullable: true
                   value:
                     type: number
-  /iris/<column>/average:
+  /iris/{column}/average:
     get:
       summary: Get average value of a column
       parameters:
         - name: column
-          in: query
+          in: path
           required: true
           schema:
             type: string
@@ -309,12 +309,12 @@ paths:
                   value:
                     type: number
 
-  /iris/<column>/median:
+  /iris/{column}/median:
     get:
       summary: Get median value of a column
       parameters:
         - name: column
-          in: query
+          in: path
           required: true
           schema:
             type: string
@@ -339,12 +339,12 @@ paths:
                   value:
                     type: number
 
-  /iris/<column>/quantile:
+  /iris/{column}/quantile:
     get:
       summary: Get quantile value of a column
       parameters:
         - name: column
-          in: query
+          in: path
           required: true
           schema:
             type: string
