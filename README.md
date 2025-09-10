@@ -36,7 +36,7 @@ By default the container runs on port 5000, but this can be configured in the do
 
 ## Linting and formatting
 
-To get linting and autoformatting based on pep8 specifications in VSCode install the following addons:\
+To get linting and autoformatting based on pep8 specifications in VSCode install the following addons:
 - Pylint
 - autopep8
 
