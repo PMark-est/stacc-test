@@ -34,3 +34,15 @@ By default the container runs on port 5000, but this can be configured in the do
     docker compose up --build
     ```
 
+## Linting and formatting
+
+To get linting and autoformatting based on pep8 specifications in VSCode install the following addons:\
+- Pylint
+- autopep8
+
+## Running tests
+
+To run test run the command
+```bash
+docker compose --profile test up --build --exit-code-from tests
+```

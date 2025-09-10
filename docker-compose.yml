@@ -12,8 +12,7 @@ services:
       - db
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/irisdb
-  
-  
+
   db:
     container_name: iris_db
     image: postgres:latest
@@ -32,6 +31,11 @@ services:
       context: .
       dockerfile: Dockerfile
     command: pytest -v tests/
+    depends_on:
+      - db
+      - app
+    profiles:
+      - test
 
 volumes:
   data_sql:
