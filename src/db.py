@@ -58,7 +58,7 @@ def load_iris_to_db(session: Session, csv_path: str = "iris.csv"):
     session.commit()
 
 
-def wait_for_db(max_retries: int = 30, retry_delay: int = 2):
+def wait_for_engine(max_retries: int = 30, retry_delay: int = 2):
     """
     Wait until the database is available before returning an engine.
     """
@@ -83,10 +83,7 @@ def wait_for_db(max_retries: int = 30, retry_delay: int = 2):
 
 
 def get_engine():
-    database_url = os.getenv(
-        'DATABASE_URL', 'postgresql://postgres:postgres@db:5432/irisdb'
-    )
-    engine = create_engine(database_url)
+    engine = wait_for_engine()
     Base.metadata.create_all(bind=engine)
     return engine
 
