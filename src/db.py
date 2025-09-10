@@ -95,10 +95,4 @@ def get_session(engine):
 def seed_if_empty(session):
     if session.query(Iris).first() is None:
         load_iris_to_db(session)
-        print("🌱 Data seeded into database")
 
-
-if __name__ == "__main__":
-    engine = get_engine()
-    session = get_session(engine)
-    seed_if_empty(session)

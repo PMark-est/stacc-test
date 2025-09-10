@@ -3,13 +3,15 @@ from flask_swagger_ui import get_swaggerui_blueprint
 from flask_cors import CORS
 from src.repositories import SpeciesRepository, IrisRepository
 from src.services import SpeciesService, IrisService
-from src.db import get_session, get_engine
+from src.db import get_session, get_engine, seed_if_empty
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
+# initializes the database
 engine = get_engine()
 db = get_session(engine)
+seed_if_empty(db)
 
 # Initialize repositories and services
 species_repo = SpeciesRepository(db)
