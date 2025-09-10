@@ -26,7 +26,7 @@ By default the container runs on port 5000, but this can be configured in the do
 
 1. Clone the repo:
    ```bash
-   git clone git@github.com:PMark-est/stacc-test.git
+   git clone https://github.com/PMark-est/stacc-test.git
    cd stacc-test
    ```
 2. Run the image:
