@@ -78,13 +78,15 @@ def get_larger_than(column):
         return jsonify({"error": "Invalid column"}), 400
 
     try:
+        species = request.args.get("species")
         value = float(request.args.get("value"))
-        n = request.args.get("n", type=int)  # Optional limit
+        n = request.args.get("n", type=int)
         order = request.args.get("order", "asc")
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid value parameter"}), 400
 
-    iris_list = app.iris_service.get_larger_than(column, value, n, order)
+    iris_list = app.iris_service.get_larger_than(
+        column, value, n, order, species)
     return jsonify(iris_list)
 
 
@@ -94,13 +96,15 @@ def get_smaller_than(column):
         return jsonify({"error": "Invalid column"}), 400
 
     try:
+        species = request.args.get("species")
         value = float(request.args.get("value"))
         n = request.args.get("n", type=int)
         order = request.args.get("order", "asc")
     except (TypeError, ValueError):
         return jsonify({"error": "Invalid value parameter"}), 400
 
-    iris_list = app.iris_service.get_smaller_than(column, value, n, order)
+    iris_list = app.iris_service.get_smaller_than(
+        column, value, n, order, species)
     return jsonify(iris_list)
 
 
