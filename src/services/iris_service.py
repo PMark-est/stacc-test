@@ -118,7 +118,7 @@ class IrisService:
         value: float,
         n: Optional[int] = None,
         order: str = "asc",
-        species: Optional[str] = None,
+        species_name: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get iris records where the column value is larger than the specified value.
@@ -137,10 +137,10 @@ class IrisService:
 
         if n:
             result = self.repo.get_n_larger_than(
-                col, value, n, order, species=species)
+                col, value, n, order, species_name=species_name)
         else:
             result = self.repo.get_all_larger_than(
-                col, value, order, species=species)
+                col, value, order, species_name=species_name)
 
         return [iris.to_dict() for iris in result]
 
@@ -150,7 +150,7 @@ class IrisService:
         value: float,
         n: Optional[int] = None,
         order: str = "asc",
-        species: Optional[str] = None,
+        species_name: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get iris records where the column value is smaller than the specified value.
@@ -169,10 +169,10 @@ class IrisService:
 
         if n:
             result = self.repo.get_n_smaller_than(
-                col, value, n, order, species=species)
+                col, value, n, order, species_name=species_name)
         else:
             result = self.repo.get_all_smaller_than(
-                col, value, order, species=species)
+                col, value, order, species_name=species_name)
 
         return [iris.to_dict() for iris in result]
 
@@ -181,7 +181,7 @@ class IrisService:
         column: str,
         value: float,
         n: Optional[int] = None,
-        species: Optional[str] = None,
+        species_name: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get iris records where the column value equals the specified value.
@@ -198,18 +198,20 @@ class IrisService:
         col = self.get_column_attribute(column)
 
         if n:
-            result = self.repo.get_n_equal_to(col, value, n, species=species)
+            result = self.repo.get_n_equal_to(
+                col, value, n, species_name=species_name)
         else:
-            result = self.repo.get_all_equal_to(col, value, species=species)
+            result = self.repo.get_all_equal_to(
+                col, value, species_name=species_name)
 
         return [iris.to_dict() for iris in result]
 
-    def get_top_n(
+    def get_n(
         self,
         column: str,
         n: int,
         order: str = "asc",
-        species: Optional[str] = None,
+        species_name: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get the top N iris records ordered by the specified column.
@@ -224,7 +226,8 @@ class IrisService:
             List[Dict[str, Any]]: List of iris records as dictionaries.
         """
         col = self.get_column_attribute(column)
-        result = self.repo.get_n(n, column=col, order=order, species=species)
+        result = self.repo.get_n(
+            n, column=col, order=order, species_name=species_name)
         return [iris.to_dict() for iris in result]
 
     def get_smallest_value(
