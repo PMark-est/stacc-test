@@ -20,6 +20,9 @@ This project wraps the dataset with a Dockerized Flask app, providing endpoints 
 ---
 
 ## 🚀 Running the API
+By default the container runs on port 5000, but this can be configured in the docker-compose.yml\
+👉 Swagger docs available at: http://localhost:5000/docs
+
 
 1. Clone the repo:
    ```bash
@@ -30,3 +33,4 @@ This project wraps the dataset with a Dockerized Flask app, providing endpoints 
     ```bash
     docker compose up --build
     ```
+
