@@ -42,7 +42,7 @@ To get linting and autoformatting based on pep8 specifications in VSCode install
 
 ## Running tests
 
-To run test run the command
+To run tests execute the command
 ```bash
 docker compose --profile test up --build --exit-code-from tests
 ```
