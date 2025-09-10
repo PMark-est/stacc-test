@@ -9,6 +9,18 @@ servers:
     description: Local development server
 
 paths:
+  /species/count:
+    get:
+      summary: Get species count
+      description: Gives a count of species.
+      responses:
+        '200':
+          description: Count of species
+          content:
+            application/json:
+              schema:
+                type: integer
+
   /species:
     get:
       summary: Get all species
@@ -181,9 +193,9 @@ paths:
                 items:
                   $ref: '#/components/schemas/Iris'
 
-  /iris/{column}/top_n:
+  /iris/{column}/get_n:
     get:
-      summary: Get top N Irises by column
+      summary: Get N Irises by column
       parameters:
         - name: column
           in: path
