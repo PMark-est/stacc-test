@@ -1,15 +1,16 @@
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped
-from sqlalchemy.orm import mapped_column
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import Optional, Dict
 from .base import Base
 
 
 class Iris(Base):
+    """Iris model representing a measured flower record."""
     __tablename__ = "iris"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     species_id: Mapped[int] = mapped_column(ForeignKey("species.id"))
+
     sepal_length: Mapped[float] = mapped_column()
     sepal_width: Mapped[float] = mapped_column()
     petal_length: Mapped[float] = mapped_column()
@@ -17,15 +18,14 @@ class Iris(Base):
 
     sepal_area: Mapped[float] = mapped_column()
     petal_area: Mapped[float] = mapped_column()
-    sepal_to_petal_area_ratio: Mapped[float] = mapped_column()
-    sepal_to_petal_length_ratio: Mapped[float] = mapped_column()
-    sepal_to_petal_width_ratio: Mapped[float] = mapped_column()
+    sepal_to_petal_area_ratio: Mapped[Optional[float]] = mapped_column()
+    sepal_to_petal_length_ratio: Mapped[Optional[float]] = mapped_column()
+    sepal_to_petal_width_ratio: Mapped[Optional[float]] = mapped_column()
 
-    # Relationship
     species: Mapped["Species"] = relationship(
         "Species", back_populates="irises")
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, str]:
         return {
             "id": self.id,
             "sepal_length": self.sepal_length,

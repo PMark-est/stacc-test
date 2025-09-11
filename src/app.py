@@ -1,182 +1,210 @@
-from flask import Flask, jsonify, request, send_from_directory, abort
+from flask import Flask, jsonify, request, send_from_directory, abort, Response, json
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_cors import CORS
 from src.repositories import SpeciesRepository, IrisRepository
 from src.services import SpeciesService, IrisService
 from src.db import get_session, get_engine, seed_if_empty
-import sys
+import typing as t
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
-# initializes the database
+# Initialize DB and services on import (same behaviour as before)
 engine = get_engine()
-db = get_session(engine)
-seed_if_empty(db)
+db_session = get_session(engine)
+seed_if_empty(db_session)
 
-# Initialize repositories and services
-species_repo = SpeciesRepository(db)
-iris_repo = IrisRepository(db)
+species_repo = SpeciesRepository(db_session)
+iris_repo = IrisRepository(db_session)
 app.species_service = SpeciesService(species_repo)
 app.iris_service = IrisService(iris_repo)
 
 
 @app.route("/spec.yaml")
 def spec():
-    """
-    Serve the OpenAPI/Swagger specification file.
-
-    Returns:
-        200 OK: YAML spec file.
-    """
+    """Serve OpenAPI spec file."""
     return send_from_directory(".", "spec.yaml")
 
 
+# Swagger UI
 SWAGGER_URL = "/docs"
 API_URL = "/spec.yaml"
 swaggerui_blueprint = get_swaggerui_blueprint(
-    SWAGGER_URL,
-    API_URL,
-    config={"app_name": "Iris API"}
-)
+    SWAGGER_URL, API_URL, config={"app_name": "Iris API"})
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 
-@app.route("/flowers")
-def get_flowers():
+# --- Iris endpoints ----------------------------------------------------
+
+@app.route("/irises", methods=["GET"])
+def list_irises():
     """
-    Retrieve all available species.
-
-    Returns:
-        200 OK: List of species as JSON.
-    """
-    query_params = request.args.to_dict()
-    flowers = app.iris_service.get_flowers(query_params)
-    return jsonify(flowers)
-
-
-@app.route('/flowers', methods=["POST"])
-def create_flower():
-    """
-    Create a new Iris record.
-
-    JSON Body:
-        {
-            "species_name": str,
-            "sepal_length": float,
-            "sepal_width": float,
-            "petal_length": float,
-            "petal_width": float
-        }
-
-    Returns:
-        201 Created: The created Iris as JSON.
-        400 Bad Request: If input data is missing or invalid.
+    List irises with optional filters:
+      - species, min_<field>, max_<field>, sort_by, sort_order, limit
     """
     try:
-        species_name = request.json['species_name']
-        sepal_length = float(request.json['sepal_length'])
-        sepal_width = float(request.json['sepal_width'])
-        petal_length = float(request.json['petal_length'])
-        petal_width = float(request.json['petal_width'])
-
-        iris = app.iris_service.create_iris(
-            species_name, sepal_length, sepal_width, petal_length, petal_width
+        params = request.args.to_dict()
+        irises = app.iris_service.list_irises(params)
+        return jsonify(irises)
+    except ValueError as e:
+        response = app.response_class(
+            response=json.dumps(str(e)),
+            status=400,
+            mimetype='application/json'
         )
-        return jsonify(iris.to_dict()), 201
-
-    except (KeyError, ValueError, TypeError):
-        return jsonify({"error": "Invalid input data"}), 400
+        return response
 
 
-@app.route("/flowers/<id>")
-def get_flower(id):
+@app.route("/irises", methods=["POST"])
+def create_iris():
     """
-    Retrieve all available species.
-
-    Returns:
-        200 OK: List of species as JSON.
+    Create an iris. Expected JSON body:
+    {
+      "species_name": str,
+      "sepal_length": float,
+      "sepal_width": float,
+      "petal_length": float,
+      "petal_width": float
+    }
     """
-    flower = app.iris_service.get_flower_by_id(id)
-    return jsonify(flower)
+    body = request.get_json(silent=True)
+    if not body:
+        response = app.response_class(
+            response=json.dumps("no body"),
+            status=400,
+            mimetype='application/json'
+        )
+        return response
+
+    try:
+        species_name = body["species_name"]
+        sepal_length = float(body["sepal_length"])
+        sepal_width = float(body["sepal_width"])
+        petal_length = float(body["petal_length"])
+        petal_width = float(body["petal_width"])
+    except (KeyError, TypeError, ValueError) as e:
+        response = app.response_class(
+            response=json.dumps(str(e)),
+            status=400,
+            mimetype='application/json'
+        )
+        return response
+
+    try:
+        iris = app.iris_service.create_iris(
+            species_name, sepal_length, sepal_width, petal_length, petal_width)
+        response = app.response_class(
+            response=json.dumps(iris),
+            status=201,
+            mimetype='application/json'
+        )
+        return response
+    except Exception:
+        abort(500)
 
 
-@app.route('/flowers/<id>', methods=['PUT'])
-def update_flower(id):
-    """
-    Retrieve all available species.
-
-    Returns:
-        200 OK: List of species as JSON.
-    """
-    data = request.get_json()
-    updated_flower = app.iris_service.update_flower(id, data)
-    if updated_flower is None:
-        abort()
-    return jsonify(updated_flower)
+@app.route("/irises/<int:iris_id>", methods=["GET"])
+def get_iris(iris_id: int):
+    """Get a single iris by id."""
+    iris = app.iris_service.get_iris_by_id(iris_id)
+    if iris is None:
+        abort(404)
+    return jsonify(iris)
 
 
-@app.route('/flowers/<id>', methods=['DELETE'])
-def delete_flower(id):
-    """
-    Retrieve all available species.
+@app.route("/irises/<int:iris_id>", methods=["PUT"])
+def update_iris(iris_id: int):
+    """Update an iris by id."""
+    body = request.get_json(silent=True)
+    if body is None:
+        response = app.response_class(
+            response=json.dumps("no body"),
+            status=400,
+            mimetype='application/json'
+        )
+        return response
+    try:
+        updated = app.iris_service.update_iris(iris_id, body)
+    except ValueError as e:
+        response = app.response_class(
+            response=json.dumps(str(e)),
+            status=400,
+            mimetype='application/json'
+        )
+        return response
 
-    Returns:
-        200 OK: List of species as JSON.
-    """
-    flower = app.iris_service.delete_flower_by_id(id)
-    return jsonify(flower)
+    if updated is None:
+        abort(404)
+    return jsonify(updated)
 
 
-@app.route("/species")
-def get_species():
-    """
-    Retrieve all available species.
+@app.route("/irises/<int:iris_id>", methods=["DELETE"])
+def delete_iris(iris_id: int):
+    """Delete an iris by id."""
+    deleted = app.iris_service.delete_iris_by_id(iris_id)
+    if not deleted:
+        abort(404)
+    return jsonify({"status": "success", "message": f"Iris {iris_id} deleted"})
 
-    Returns:
-        200 OK: List of species as JSON.
-    """
+    # --- Species endpoints ------------------------------------------------
+
+
+@app.route("/species", methods=["GET"])
+def list_species():
+    """Return all species."""
     species_list = app.species_service.get_all_species()
     return jsonify(species_list)
 
 
-@app.route("/species/<species_name>/summary")
-def get_summary(species_name: str):
-    """
-    Retrieve all available species.
-
-    Returns:
-        200 OK: List of species as JSON.
-    """
-    flowers = app.iris_service.get_flower_summary(species_name)
-    return jsonify(flowers)
+@app.route("/species/<string:species_name>/summary", methods=["GET"])
+def species_summary(species_name: str):
+    """Return measurement summary for a species."""
+    summary = app.iris_service.get_summary_for_species(species_name)
+    return jsonify(summary)
 
 
-@app.route("/statistics")
-def get_statistics():
-    """
-    Retrieve all available species.
-
-    Returns:
-        200 OK: List of species as JSON.
-    """
-    stats = app.iris_service.get_stats(app.species_service)
+@app.route("/statistics", methods=["GET"])
+def statistics():
+    """Return dataset wide statistics and species distribution."""
+    stats = app.iris_service.get_stats_for_species(app.species_service)
     return jsonify(stats)
 
 
-@app.route("/statistics/quantile")
-def get_quantile():
+@app.route("/statistics/quantile", methods=["GET"])
+def statistics_quantile():
     """
-    Retrieve all available species.
+    Compute a quantile for a given measurement column.
 
-    Returns:
-        200 OK: List of species as JSON.
+    Query params:
+      - measurement: str (required, e.g. "sepal_length")
+      - quantile: float between 0 and 1 (required)
+      - species: str (optional, case-insensitive)
     """
-    q = float(request.args.get("quantile"))
-    species = request.args.get("species")
-    feature = request.args.get("measurement")
-    stats = app.iris_service.get_quantile(feature, q, species)
-    return jsonify(stats)
+    try:
+        measurement = request.args.get("measurement")
+        q = float(request.args.get("quantile", ""))
+        species = request.args.get("species_name")
+    except (TypeError, ValueError) as e:
+        response = app.response_class(
+            response=json.dumps(str(e)),
+            status=400,
+            mimetype='application/json'
+        )
+        return response
+
+    try:
+        result = app.iris_service.get_quantile(measurement, q, species)
+    except ValueError as e:
+        response = app.response_class(
+            response=json.dumps(str(e)),
+            status=400,
+            mimetype='application/json'
+        )
+        return response
+
+    if result is None:
+        abort(404)
+    return jsonify({"measurement": measurement, "quantile": q, "species_name": species, "value": result})
 
 
 if __name__ == "__main__":

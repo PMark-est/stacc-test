@@ -1,29 +1,15 @@
-from typing import List, Optional, Dict, Any
+from typing import List, Dict, Any, Optional
 from src.repositories import IrisRepository
-from src.models import Iris, Species
+from src.models import Iris
 from src.services.species_service import SpeciesService
-import sys
 
 
 class IrisService:
     """
-    A service class that provides business logic and operations for Iris entities.
-
-    This class acts as an intermediary between the API layer and the repository layer,
-    handling data validation, transformation, and business rules for Iris data.
-
-    Attributes:
-        repo (IrisRepository): The repository instance for database operations.
-        field_map (Dict[str, Any]): Mapping of column names to SQLAlchemy attributes.
+    Business logic layer for Iris domain.
     """
 
     def __init__(self, iris_repository: IrisRepository) -> None:
-        """
-        Initialize the IrisService with a repository instance.
-
-        Args:
-            iris_repository (IrisRepository): The repository instance for database operations.
-        """
         self.repo = iris_repository
         self.field_map = {
             "sepal_length": Iris.sepal_length,
@@ -37,180 +23,110 @@ class IrisService:
             "sepal_to_petal_width_ratio": Iris.sepal_to_petal_width_ratio,
         }
 
-    def create_iris(
-        self,
-        species_name: str,
-        sepal_length: float,
-        sepal_width: float,
-        petal_length: float,
-        petal_width: float,
-    ) -> Dict[str, Any]:
-        """
-        Create a new iris record in the database.
+    # --- Create / Read / Update / Delete --------------------------------
 
-        Args:
-            species_name (str): The name of the species.
-            sepal_length (float): The sepal length measurement.
-            sepal_width (float): The sepal width measurement.
-            petal_length (float): The petal length measurement.
-            petal_width (float): The petal width measurement.
-
-        Returns:
-            Dict[str, Any]: The created iris record as a dictionary.
-        """
-        iris = self.repo.create_iris(
+    def create_iris(self, species_name: str, sepal_length: float, sepal_width: float, petal_length: float, petal_width: float) -> Dict[str, Any]:
+        created = self.repo.create(
             species_name, sepal_length, sepal_width, petal_length, petal_width)
-        return iris.to_dict()
+        return created.to_dict()
 
-    def get_available_columns(self) -> List[str]:
-        """
-        Get a list of all available columns for querying.
-
-        Returns:
-            List[str]: List of column names that can be used in queries.
-        """
-        return list(self.field_map.keys())
-
-    def validate_column(self, column: str) -> bool:
-        """
-        Validate if a column exists in the available column map.
-
-        Args:
-            column (str): The column name to validate.
-
-        Returns:
-            bool: True if the column exists, False otherwise.
-        """
-        return column in self.field_map
-
-    def get_column_attribute(self, column: str) -> Any:
-        """
-        Get the SQLAlchemy column attribute for a given column name.
-
-        Args:
-            column (str): The column name to look up.
-
-        Returns:
-            Any: The SQLAlchemy column attribute, or None if not found.
-
-        Raises:
-            ValueError: If the column is not found in the column map.
-        """
-        if column not in self.field_map:
+    def list_irises(self, params: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Return list of iris dicts after validating sorting params."""
+        sort_by = params.get("sort_by")
+        if sort_by and sort_by not in self.field_map and sort_by != "species":
             raise ValueError(
-                f"Column '{column}' is not available for querying.")
-        return self.field_map[column]
+                f"Invalid sort field. Must be one of: {', '.join(list(self.field_map.keys()) + ['species'])}")
 
-    def get_all_by_species(self, species_name: str) -> List[Dict[str, Any]]:
-        """
-        Get all iris records for a specific species.
-
-        Args:
-            species_name (str): The name of the species to filter by.
-
-        Returns:
-            List[Dict[str, Any]]: List of iris records as dictionaries.
-        """
-        result = self.repo.get_all_by_species(species_name)
-        return [iris.to_dict() for iris in result]
-
-    # List[Iris.to_dict]
-    def get_flowers(self, params) -> List[Dict[str, str]]:
-        sort_by = params["sort_by"]
-        if sort_by and sort_by not in self.field_map:
-            raise ValueError(
-                f"Invalid sort field. Must be one of: {', '.join(self.field_map.keys())}")
-
-        sort_order = params["sort_order"]
-        if sort_order and sort_order not in ['asc', 'desc']:
+        sort_order = params.get("sort_order")
+        if sort_order and sort_order.lower() not in {"asc", "desc"}:
             raise ValueError("Invalid sort order. Must be 'asc' or 'desc'")
 
-        flowers = self.repo.get_flowers(
-            params, self.field_map, sort_by, sort_order)
-        return [flower.to_dict() for flower in flowers]
+        rows = self.repo.list_irises(params, self.field_map)
+        return [r.to_dict() for r in rows]
 
-    def get_flower_by_id(self, id) -> Dict[str, str]:  # Iris.to_dict
-        return self.repo.get_flower_by_id(id).to_dict()
+    def get_iris_by_id(self, iris_id: int) -> Optional[Dict[str, Any]]:
+        row = self.repo.get_by_id(int(iris_id))
+        if not row:
+            return None
+        return row.to_dict()
 
-    def update_flower(self, flower_id: int, update_data: Dict[str, Any]) -> Dict[str, str]:
-        """
-        Update a flower and return the result.
-
-        Args:
-            flower_id (int): ID of the flower to update
-            update_data (Dict): Fields to update
-
-        Returns:
-            Dict: Result with status and data/error
-        """
-        # Validate input
+    def update_iris(self, iris_id: int, update_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Validate update data and perform update; returns updated dict or None."""
         if not update_data:
-            return "No data provided"
+            raise ValueError("No data provided for update")
 
-        valid_features = ['sepal_length', 'species',
-                          'sepal_width', 'petal_length', 'petal_width']
+        valid_keys = {"sepal_length", "sepal_width",
+                      "petal_length", "petal_width", "species_name"}
+        for k in update_data.keys():
+            if k not in valid_keys:
+                raise ValueError(f"Invalid field in update payload: {k}")
 
-        for field in update_data:
-            if field not in valid_features:
-                raise ValueError(f"Field {field} is not a valid feature")
+        # Validate numeric fields
+        for k in ("sepal_length", "sepal_width", "petal_length", "petal_width"):
+            if k in update_data:
+                try:
+                    val = float(update_data[k])
+                except (TypeError, ValueError):
+                    raise ValueError(f"{k} must be a number")
+                if val <= 0:
+                    raise ValueError(f"{k} must be positive")
 
-        for field in update_data:
-            if field == "species":
-                continue
-            try:
-                value = float(update_data[field])
-                if value <= 0:
-                    return {"status": "error", "message": f"{field} must be positive"}
-            except (ValueError, TypeError):
-                return {"status": "error", "message": f"{field} must be a number"}
-
-        # Update the flower
-        updated_flower = self.repo.update_flower(flower_id, update_data)
-
-        if not updated_flower:
-            raise ValueError(f"Flower with ID {flower_id} not found")
-
-        if updated_flower is None:
+        updated = self.repo.update(int(iris_id), update_data)
+        if updated is None:
             return None
-        return updated_flower.to_dict()
+        return updated.to_dict()
 
-    def delete_flower_by_id(self, flower_id: int) -> Dict[str, Any]:
+    def delete_iris_by_id(self, iris_id: int) -> bool:
+        """Delete an iris; return True if deleted, False if not found."""
+        return self.repo.delete_by_id(int(iris_id))
+
+    # --- Aggregation / Statistics ---------------------------------------
+
+    def get_available_columns(self) -> List[str]:
+        return list(self.field_map.keys())
+
+    def get_summary_for_species(self, species_name: str) -> Dict[str, Any]:
+        """Return per-measurement statistics and total records for a single species."""
+        cols = self.get_available_columns()
+        summary = {"measurements": {}}
+        summary["total_records"] = self.repo.count_by_species(species_name)
+        for col in cols:
+            attr = self.field_map[col]
+            summary["measurements"][col] = self.repo.get_stats(
+                attr, species_name)
+        return summary
+
+    def get_stats_for_species(self, species_service: SpeciesService) -> Dict[str, Any]:
         """
-        Delete a flower by ID.
-
-        Args:
-            flower_id (int): ID of the flower to delete
-
-        Returns:
-            Dict: Result with status and message
+        Build statistics summary across species and measurements.
+        Note: measurement stats are computed across all species (and per-species when requested).
         """
-        success = self.repo.delete_flower_by_id(flower_id)
-
-        if success is None:
-            return None
-
-        return {"status": "success", "message": f"Flower with ID {flower_id} deleted successfully"}
-
-    def get_stats(self, species_service: SpeciesService):
         species_list = species_service.get_all_species()
         cols = self.get_available_columns()
         stats = {"species_distribution": {}, "measurements": {}}
         for species in species_list:
-            species_name = species["name"]
-            stats["species_distribution"][species_name] = self.repo.get_flowers_amount(
-                species_name)
-            for col in cols:
-                column = self.field_map[col]
-                stats["measurements"][col] = self.repo.get_stats(column)
+            name = species["name"]
+            stats["species_distribution"][name] = self.repo.count_by_species(
+                name)
+
+        # measurement stats across entire dataset
+        for col in cols:
+            attr = self.field_map[col]
+            stats["measurements"][col] = self.repo.get_stats(attr)
+
         stats["total_records"] = sum(stats["species_distribution"].values())
         return stats
 
-    def get_flower_summary(self, species_name: str):
-        cols = self.get_available_columns()
-        stats = {"measurements": {}}
-        stats["total_records"] = self.repo.get_flowers_amount(species_name)
-        for col in cols:
-            column = self.field_map[col]
-            stats["measurements"][col] = self.repo.get_stats(
-                column, species_name)
-        return stats
+    def get_quantile(self, column_name: str, quantile: float, species_name: Optional[str] = None) -> Optional[float]:
+        """
+        Compute quantile for a measurement column.
+        Raises ValueError for invalid inputs.
+        """
+        if column_name not in self.field_map:
+            raise ValueError(
+                f"Invalid column '{column_name}'. Must be one of: {', '.join(self.field_map.keys())}")
+        if not (0 <= quantile <= 1):
+            raise ValueError("Quantile must be between 0 and 1")
+
+        column = self.field_map[column_name]
+        return self.repo.get_quantile(column, quantile, species_name)
