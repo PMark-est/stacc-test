@@ -5,10 +5,6 @@ class SpeciesService:
     def __init__(self, species_repository: SpeciesRepository):
         self.repo = species_repository
 
-    def get_count(self):
-        """Get count of species"""
-        return self.repo.get_count()
-
     def get_all_species(self):
         """Get all species."""
         result = self.repo.get_all()

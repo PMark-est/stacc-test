@@ -16,15 +16,6 @@ class SpeciesRepository(BaseRepository):
         db (Session): The SQLAlchemy database session used for all operations.
     """
 
-    def get_count(self) -> int:
-        """
-        Retrieves the total count of all species in the database.
-
-        Returns:
-            int: The total number of species records.
-        """
-        return self.session.query(Species).count()
-
     def get_all(self) -> List[Species]:
         """
         Retrieves all Species entities from the database.

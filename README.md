@@ -1,25 +1,25 @@
-# 🌸 Classic Iris API
+# Classic Iris API
 
 A simple REST API for exploring the classic [Iris dataset](https://en.wikipedia.org/wiki/Iris_flower_data_set).  
 This project wraps the dataset with a Dockerized Flask app, providing endpoints for querying, filtering, and performing basic statistics.
 
 ---
 
-## ✨ Features
-- 🔍 Query iris flowers by species or measurements
-- 📊 Compute statistics (min, max, average, median, quantiles)
-- ⚡ Fast responses via SQLAlchemy + Postgres
-- 📖 Interactive API docs powered by Swagger UI
+##  Features
+- Query iris flowers by species or measurements
+- Compute statistics (min, max, average, median, quantiles)
+- Fast responses via SQLAlchemy + Postgres
+- Interactive API docs powered by Swagger UI
 
 ---
 
-## 🛠️ Prerequisites
+##  Prerequisites
 - [Docker](https://docs.docker.com/get-docker/)  
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
 ---
 
-## 🚀 Running the API
+##  Running the API
 By default the container runs on port 5000, but this can be configured in the docker-compose.yml\
 👉 Swagger docs available at: http://localhost:5000/docs
 

@@ -7,428 +7,505 @@ info:
 servers:
   - url: http://localhost:5000
     description: Local development server
+  
+tags:
+  - name: Flowers
+    description: |
+      Operations for individual iris flower records
+  - name: Species
+    description: |
+      Operations related to iris species
+  - name: Statistics
+    description: |
+      Statistical analysis and data insights
 
 paths:
-  /species/count:
+  /flowers:
     get:
-      summary: Get species count
-      description: Gives a count of species.
-      responses:
-        '200':
-          description: Count of species
-          content:
-            application/json:
-              schema:
-                type: integer
-
-  /species:
-    get:
-      summary: Get all species
-      description: Retrieve a list of all species.
-      responses:
-        '200':
-          description: A list of species
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    id:
-                      type: integer
-                    name:
-                      type: string
-
-  /iris/columns:
-    get:
-      summary: Get available Iris columns
-      description: Retrieve a list of all Iris measurement columns.
-      responses:
-        '200':
-          description: A list of column names
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: string
-
-  /iris/{name}:
-    get:
-      summary: Get all Irises by species
+      tags:
+        - Flowers
+      summary: Query Iris records
+      description: Retrieve Iris records filtered by exact values or numeric ranges.
       parameters:
-        - name: name
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Species name (e.g., setosa, versicolor, virginica)
-      responses:
-        '200':
-          description: List of Iris objects for the species
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Iris'
+      - name: species
+        in: query
+        description: Filter by iris species
+        schema:
+          type: string
+          enum: [setosa, versicolor, virginica]
+        example: setosa
+      - name: min_sepal_length
+        in: query
+        description: Minimum sepal length in cm
+        schema:
+          type: number
+          format: float
+        example: 1.25
+      - name: max_sepal_length
+        in: query
+        description: Maximum sepal length in cm
+        schema:
+          type: number
+          format: float
+      - name: min_sepal_width
+        in: query
+        description: Minimum sepal width in cm
+        schema:
+          type: number
+          format: float
+      - name: max_sepal_width
+        in: query
+        description: Maximum sepal width in cm
+        schema:
+          type: number
+          format: float
+      - name: min_petal_length
+        in: query
+        description: Minimum petal length in cm
+        schema:
+          type: number
+          format: float
+      - name: max_petal_length
+        in: query
+        description: Maximum petal length in cm
+        schema:
+          type: number
+          format: float
+      - name: min_petal_width
+        in: query
+        description: Minimum petal width in cm
+        schema:
+          type: number
+          format: float
+      - name: max_petal_width
+        in: query
+        description: Maximum petal width in cm
+        schema:
+          type: number
+          format: float
+      - name: min_sepal_area
+        in: query
+        description: Minimum sepal area in cm²
+        schema:
+          type: number
+          format: float
+      - name: max_sepal_area
+        in: query
+        description: Maximum sepal area in cm²
+        schema:
+          type: number
+          format: float
+      - name: min_petal_area
+        in: query
+        description: Minimum petal area in cm²
+        schema:
+          type: number
+          format: float
+      - name: max_petal_area
+        in: query
+        description: Maximum petal area in cm²
+        schema:
+          type: number
+          format: float
+      - name: min_sepal_to_petal_area_ratio
+        in: query
+        description: Minimum sepal to petal area ratio
+        schema:
+          type: number
+          format: float
+      - name: max_sepal_to_petal_area_ratio
+        in: query
+        description: Maximum sepal to petal area ratio
+        schema:
+          type: number
+          format: float
+      - name: min_sepal_to_petal_length_ratio
+        in: query
+        description: Minimum sepal to petal length ratio
+        schema:
+          type: number
+          format: float
+      - name: max_sepal_to_petal_length_ratio
+        in: query
+        description: Maximum sepal to petal length ratio
+        schema:
+          type: number
+          format: float
+      - name: min_sepal_to_petal_width_ratio
+        in: query
+        description: Minimum sepal to petal width ratio
+        schema:
+          type: number
+          format: float
+      - name: max_sepal_to_petal_width_ratio
+        in: query
+        description: Maximum sepal to petal width ratio
+        schema:
+          type: number
+          format: float
+      - name: limit
+        in: query
+        description: Number of records per page
+        schema:
+          type: integer
+        example: 5
+      - name: sort_by
+        in: query
+        description: Field to sort by
+        schema:
+          type: string
+          enum: [sepal_length, sepal_width, petal_length, petal_width, sepal_area, petal_area, sepal_to_petal_area_ratio, sepal_to_petal_length_ratio, sepal_to_petal_width_ratio, species]
+          default: sepal_length
+        example: sepal_length
+      - name: sort_order
+        in: query
+        description: Sort order
+        schema:
+          type: string
+          enum: [asc, desc]
+          default: asc
+        example: asc
 
-  /iris/{column}/larger_than:
-    get:
-      summary: Get Irises with values larger than a threshold
-      parameters:
-        - name: column
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: value
-          in: query
-          required: true
-          schema:
-            type: number
-          description: Threshold value
-        - name: n
-          in: query
-          required: false
-          schema:
-            type: integer
-          description: Optional limit of rows
-        - name: order
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [asc, desc]
-        - name: species
-          in: query
-          required: false
-          schema:
-            type: string
-            description: Optional species filter
       responses:
         '200':
-          description: List of Iris objects
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Iris'
-
-  /iris/{column}/smaller_than:
-    get:
-      summary: Get Irises with values smaller than a threshold
-      parameters:
-        - name: column
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: value
-          in: query
-          required: true
-          schema:
-            type: number
-        - name: n
-          in: query
-          required: false
-          schema:
-            type: integer
-        - name: order
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [asc, desc]
-        - name: species
-          in: query
-          required: false
-          schema:
-            type: string
-            description: Optional species filter
-      responses:
-        '200':
-          description: List of Iris objects
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Iris'
-
-  /iris/{column}/equal_to:
-    get:
-      summary: Get Irises with values equal to a specific number
-      parameters:
-        - name: column
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: value
-          in: query
-          required: true
-          schema:
-            type: number
-        - name: n
-          in: query
-          required: false
-          schema:
-            type: integer
-        - name: species
-          in: query
-          required: false
-          schema:
-            type: string
-            description: Optional species filter
-      responses:
-        '200':
-          description: List of Iris objects
+          description: A list of Iris records
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Iris'
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
-  /iris/{column}/get_n:
-    get:
-      summary: Get N Irises by column
-      parameters:
-        - name: column
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: n
-          in: query
-          required: true
-          schema:
-            type: integer
-        - name: order
-          in: query
-          required: false
-          schema:
-            type: string
-            enum: [asc, desc]
-        - name: species
-          in: query
-          required: false
-          schema:
-            type: string
-            description: Optional species filter
-      responses:
-        '200':
-          description: Top N Iris objects
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Iris'
-
-  /iris/{column}/smallest:
-    get:
-      summary: Get smallest Iris by column
-      parameters:
-        - name: column
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: species
-          in: query
-          required: false
-          schema:
-            type: string
-            description: Optional species filter
-      responses:
-        '200':
-          description: Smallest value of the column
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  column:
-                    type: string
-                  species:
-                    type: string
-                    nullable: true
-                  value:
-                    type: number
-    
-  /iris/{column}/largest:
-    get:
-      summary: Get largest Iris by column
-      parameters:
-        - name: column
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: species
-          in: query
-          required: false
-          schema:
-            type: string
-            description: Optional species filter
-      responses:
-        '200':
-          description: Largest value of the column
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  column:
-                    type: string
-                  species:
-                    type: string
-                    nullable: true
-                  value:
-                    type: number
-  /iris/{column}/average:
-    get:
-      summary: Get average value of a column
-      parameters:
-        - name: column
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: species
-          in: query
-          required: false
-          schema:
-            type: string
-            description: Optional species filter
-      responses:
-        '200':
-          description: Average value for the column
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  column:
-                    type: string
-                  species:
-                    type: string
-                    nullable: true
-                  value:
-                    type: number
-
-  /iris/{column}/median:
-    get:
-      summary: Get median value of a column
-      parameters:
-        - name: column
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: species
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Median value for the column
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  column:
-                    type: string
-                  species:
-                    type: string
-                    nullable: true
-                  value:
-                    type: number
-
-  /iris/{column}/quantile:
-    get:
-      summary: Get quantile value of a column
-      parameters:
-        - name: column
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: q
-          in: query
-          required: true
-          schema:
-            type: number
-            minimum: 0
-            maximum: 1
-            description: Quantile between 0 and 1
-        - name: species
-          in: query
-          required: false
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Quantile value for the column
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  column:
-                    type: string
-                  species:
-                    type: string
-                    nullable: true
-                  quantile:
-                    type: number
-                  value:
-                    type: number
-  /iris:
     post:
-      summary: Add a new Iris
+      tags:
+        - Flowers
+      summary: Add a new iris flower record
       description: Create a new Iris entry. If the species does not exist, it will be created.
+      requestBody:
+        description: Optional description in *Markdown*
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/IrisInput"
+      responses:
+        '201':
+          description: Successfully created flower record.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Iris'
+        '404':
+          description: Flower record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /flowers/{id}:
+    get:
+      tags:
+        - Flowers
+      summary: Get a specific iris flower record
+      description: Retrieve detailed information for a specific iris flower by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the iris flower record
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Successfully retrieved flower record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Iris'
+              examples:
+                default:
+                  value:
+                    id: 1
+                    sepal_length: 5.1
+                    sepal_width: 3.5
+                    petal_length: 1.4
+                    petal_width: 0.2
+                    sepal_area: 17.85
+                    petal_area: 0.28
+                    sepal_to_petal_area_ratio: 63.75
+                    sepal_to_petal_length_ratio: 3.64
+                    sepal_to_petal_width_ratio: 17.5
+                    species_id: 1
+                    species:
+                      id: 1
+                      name: setosa
+        '404':
+          description: Flower record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                not_found:
+                  value:
+                    error: "Flower record with ID 999 not found"
+                    code: "NOT_FOUND"
+                    details: {}
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Flowers
+      summary: Update a specific iris flower record
+      description: Update measurements and details for a specific iris flower record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the iris flower record to update
+          schema:
+            type: integer
+          example: 1
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                species_name:
-                  type: string
-                  example: "setosa"
-                sepal_length:
-                  type: number
-                  example: 5.1
-                sepal_width:
-                  type: number
-                  example: 3.5
-                petal_length:
-                  type: number
-                  example: 1.4
-                petal_width:
-                  type: number
-                  example: 0.2
-              required:
-                - species_name
-                - sepal_length
-                - sepal_width
-                - petal_length
-                - petal_width
+              $ref: '#/components/schemas/IrisInput'
+            examples:
+              update_example:
+                value:
+                  sepal_length: 5.2
+                  sepal_width: 3.6
+                  petal_length: 1.5
+                  petal_width: 0.3
+                  species: "setosa"
       responses:
-        '201':
-          description: The created Iris object
+        '200':
+          description: Successfully updated flower record
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Iris'
+              examples:
+                updated:
+                  value:
+                    id: 1
+                    sepal_length: 5.2
+                    sepal_width: 3.6
+                    petal_length: 1.5
+                    petal_width: 0.3
+                    sepal_area: 18.72
+                    petal_area: 0.45
+                    sepal_to_petal_area_ratio: 41.6
+                    sepal_to_petal_length_ratio: 3.47
+                    sepal_to_petal_width_ratio: 12.0
+                    species_id: 1
+                    species:
+                      id: 1
+                      name: setosa
+        '400':
+          description: Bad request - invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Flower record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      tags:
+        - Flowers
+      summary: Delete a specific iris flower record
+      description: |
+        Permanently delete a specific iris flower record from the dataset
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique identifier of the iris flower record to delete
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '204':
+          description: Successfully deleted flower record (no content)
+        '404':
+          description: Flower record not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /species:
+    get:
+      tags:
+        - Species
+      summary: Get all available iris species
+      description: Retrieve a list of all species.
+      responses:
+        '200':
+          description: A list of iris species
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Species'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+  /species/{species}/summary:
+    get:
+      tags:
+        - Species
+      summary: Get statistical summary for a specific species
+      description: Retrieve statistical summary for measurements of a specific iris species.
+      parameters:
+        - name: species
+          in: path
+          required: true
+          description: Name of the iris species
+          schema:
+            type: string
+            enum: [setosa, versicolor, virginica]
+          example: setosa
+      responses:
+        '200':
+          description: Statistical summary for the species
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticsResponse'
+                
+        '404':
+          description: Species not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /statistics:
+    get:
+      tags:
+        - Statistics
+      summary: Get overall dataset statistics
+      description: Retrieve comprehensive statistical analysis of the entire iris dataset
+      responses:
+        '200':
+          description: Successfully retrieved dataset statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatisticsResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /statistics/quantile:
+    get:
+      tags:
+        - Statistics
+      summary: Get quantile value
+      description: Retrieve quantile valus for measurement
+      parameters:
+        - name: quantile
+          in: query
+          description: Quantile value
+          schema:
+            type: number
+          example: 0.25
+        - name: species
+          in: query
+          description: Filter by iris species
+          schema:
+            type: string
+            enum: [setosa, versicolor, virginica]
+        - name: measurement
+          in: query
+          required: true
+          description: Measurement field to analyze
+          schema:
+            type: string
+            enum: [sepal_length, sepal_width, petal_length, petal_width, sepal_area, petal_area, sepal_to_petal_area_ratio, sepal_to_petal_length_ratio, sepal_to_petal_width_ratio]
+          example: petal_length
+      responses:
+        '200':
+          description: Successfully retrieved quantile value
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: number
+                example:
+                  0.25: 1.6
+
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
 components:
   schemas:
@@ -437,33 +514,189 @@ components:
       properties:
         id:
           type: integer
+          example: 1
         name:
           type: string
+          example: "setosa"
 
     Iris:
       type: object
       properties:
         id:
           type: integer
+          example: 1
         sepal_length:
           type: number
+          format: float
+          example: 5.1
         sepal_width:
           type: number
+          format: float
+          example: 3.5
         petal_length:
           type: number
+          format: float
+          example: 1.4
         petal_width:
           type: number
+          format: float
+          example: 0.2
         sepal_area:
           type: number
+          format: float
+          example: 17.85
         petal_area:
           type: number
+          format: float
+          example: 0.28
         sepal_to_petal_area_ratio:
           type: number
+          format: float
+          example: 63.75
         sepal_to_petal_length_ratio:
           type: number
+          format: float
+          example: 3.64
         sepal_to_petal_width_ratio:
           type: number
+          format: float
+          example: 17.5
         species_id:
           type: integer
+          example: 1
         species:
           $ref: '#/components/schemas/Species'
+
+    IrisInput:
+      type: object
+      properties:
+        sepal_length:
+          type: number
+          format: float
+          example: 5.1
+        sepal_width:
+          type: number
+          format: float
+          example: 3.5
+        petal_length:
+          type: number
+          format: float
+          example: 1.4
+        petal_width:
+          type: number
+          format: float
+          example: 0.2
+        species:
+          type: string
+          example: setosa
+      required:
+        - sepal_length
+        - sepal_width
+        - petal_length
+        - petal_width
+        - species
+
+    StatisticsResponse:
+      type: object
+      properties:
+        total_records:
+          type: integer
+          example: 150
+        species_distribution:
+          type: object
+          additionalProperties:
+            type: integer
+          example:
+            setosa: 50
+            versicolor: 50
+            virginica: 50
+        overall_measurements:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/MeasurementStats'
+          example:
+            sepal_length:
+              mean: 5.843
+              min: 4.3
+              max: 7.9
+              std: 0.828
+            sepal_width: 
+              mean: 3.057
+              min: 2.0
+              max: 4.4
+              std: 0.436
+            petal_length:
+              mean: 3.758
+              min: 1.0
+              max: 6.9
+              std: 1.765
+            petal_width:
+              mean: 1.199
+              min: 0.1
+              max: 2.5
+              std: 0.762
+            sepal_area:
+              mean: 17.8
+              min: 8.6
+              max: 34.8
+              std: 3.2
+            petal_area:
+              mean: 4.5
+              min: 0.1
+              max: 17.3
+              std: 4.1
+            sepal_to_petal_area_ratio: 
+              mean: 4.2
+              min: 0.5
+              max: 348.0
+              std: 8.7
+            sepal_to_petal_length_ratio:
+              mean: 1.8
+              min: 0.7
+              max: 5.1
+              std: 0.9
+            sepal_to_petal_width_ratio:
+              mean: 2.8
+              min: 0.9
+              max: 44.0
+              std: 4.3
+
+    MeasurementStats:
+      type: object
+      properties:
+        mean:
+          type: number
+          format: float
+          example: 5.843
+        min:
+          type: number
+          format: float
+          example: 4.3
+        max:
+          type: number
+          format: float
+          example: 7.9
+        std:
+          type: number
+          format: float
+          example: 0.828
+        median:
+          type: number
+          format: float
+          example: 1.73
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Resource not found"
+        code:
+          type: string
+          example: "NOT_FOUND"
+        details:
+          type: object
+          example: {}
+      required:
+        - error
+        - code

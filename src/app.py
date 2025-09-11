@@ -1,9 +1,10 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, abort
 from flask_swagger_ui import get_swaggerui_blueprint
 from flask_cors import CORS
 from src.repositories import SpeciesRepository, IrisRepository
 from src.services import SpeciesService, IrisService
 from src.db import get_session, get_engine, seed_if_empty
+import sys
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -31,9 +32,8 @@ def spec():
     return send_from_directory(".", "spec.yaml")
 
 
-# Swagger UI setup
-SWAGGER_URL = "/docs"  # URL for exposing Swagger UI
-API_URL = "/spec.yaml"  # Our spec file
+SWAGGER_URL = "/docs"
+API_URL = "/spec.yaml"
 swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL,
     API_URL,
@@ -42,8 +42,21 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 
-@app.route('/iris', methods=["POST"])
-def add_iris():
+@app.route("/flowers")
+def get_flowers():
+    """
+    Retrieve all available species.
+
+    Returns:
+        200 OK: List of species as JSON.
+    """
+    query_params = request.args.to_dict()
+    flowers = app.iris_service.get_flowers(query_params)
+    return jsonify(flowers)
+
+
+@app.route('/flowers', methods=["POST"])
+def create_flower():
     """
     Create a new Iris record.
 
@@ -76,16 +89,43 @@ def add_iris():
         return jsonify({"error": "Invalid input data"}), 400
 
 
-@app.route("/species/count")
-def get_species_count():
+@app.route("/flowers/<id>")
+def get_flower(id):
     """
-    Retrieve amount of different species.
+    Retrieve all available species.
 
     Returns:
-        200 OK: Amount of different species.
+        200 OK: List of species as JSON.
     """
-    count = app.species_service.get_count()
-    return jsonify(count)
+    flower = app.iris_service.get_flower_by_id(id)
+    return jsonify(flower)
+
+
+@app.route('/flowers/<id>', methods=['PUT'])
+def update_flower(id):
+    """
+    Retrieve all available species.
+
+    Returns:
+        200 OK: List of species as JSON.
+    """
+    data = request.get_json()
+    updated_flower = app.iris_service.update_flower(id, data)
+    if updated_flower is None:
+        abort()
+    return jsonify(updated_flower)
+
+
+@app.route('/flowers/<id>', methods=['DELETE'])
+def delete_flower(id):
+    """
+    Retrieve all available species.
+
+    Returns:
+        200 OK: List of species as JSON.
+    """
+    flower = app.iris_service.delete_flower_by_id(id)
+    return jsonify(flower)
 
 
 @app.route("/species")
@@ -100,283 +140,43 @@ def get_species():
     return jsonify(species_list)
 
 
-@app.route("/iris/columns")
-def get_columns():
+@app.route("/species/<species_name>/summary")
+def get_summary(species_name: str):
     """
-    Retrieve all available numeric columns for Iris queries.
+    Retrieve all available species.
 
     Returns:
-        200 OK: List of column names as JSON.
+        200 OK: List of species as JSON.
     """
-    columns = app.iris_service.get_available_columns()
-    return jsonify(columns)
+    flowers = app.iris_service.get_flower_summary(species_name)
+    return jsonify(flowers)
 
 
-@app.route("/iris/<name>")
-def get_all_by_species(name):
+@app.route("/statistics")
+def get_statistics():
     """
-    Retrieve all Iris records for a given species.
-
-    Path Params:
-        name (str): Species name.
+    Retrieve all available species.
 
     Returns:
-        200 OK: List of Iris records as JSON.
+        200 OK: List of species as JSON.
     """
-    iris_list = app.iris_service.get_all_by_species(name)
-    return jsonify(iris_list)
+    stats = app.iris_service.get_stats(app.species_service)
+    return jsonify(stats)
 
 
-@app.route("/iris/<column>/larger_than")
-def get_larger_than(column):
+@app.route("/statistics/quantile")
+def get_quantile():
     """
-    Retrieve Iris rows where a column is greater than a value.
-
-    Path Params:
-        column (str): Column name.
-
-    Query Params:
-        value (float): Threshold value (required).
-        n (int): Max number of rows (optional).
-        order (str): "asc" or "desc" (default: "asc").
-        species (str): Filter by species (optional).
+    Retrieve all available species.
 
     Returns:
-        200 OK: List of Iris records as JSON.
-        400 Bad Request: If parameters are invalid.
+        200 OK: List of species as JSON.
     """
-    if not app.iris_service.validate_column(column):
-        return jsonify({"error": "Invalid column"}), 400
-
-    try:
-        species = request.args.get("species")
-        value = float(request.args.get("value"))
-        n = request.args.get("n", type=int)
-        order = request.args.get("order", "asc")
-    except (TypeError, ValueError):
-        return jsonify({"error": "Invalid value parameter"}), 400
-
-    iris_list = app.iris_service.get_larger_than(
-        column, value, n, order, species
-    )
-    return jsonify(iris_list)
-
-
-@app.route("/iris/<column>/smaller_than")
-def get_smaller_than(column):
-    """
-    Retrieve Iris rows where a column is smaller than a value.
-
-    Path Params:
-        column (str): Column name.
-
-    Query Params:
-        value (float): Threshold value (required).
-        n (int): Max number of rows (optional).
-        order (str): "asc" or "desc" (default: "asc").
-        species (str): Filter by species (optional).
-
-    Returns:
-        200 OK: List of Iris records as JSON.
-        400 Bad Request: If parameters are invalid.
-    """
-    if not app.iris_service.validate_column(column):
-        return jsonify({"error": "Invalid column"}), 400
-
-    try:
-        species = request.args.get("species")
-        value = float(request.args.get("value"))
-        n = request.args.get("n", type=int)
-        order = request.args.get("order", "asc")
-    except (TypeError, ValueError):
-        return jsonify({"error": "Invalid value parameter"}), 400
-
-    iris_list = app.iris_service.get_smaller_than(
-        column, value, n, order, species
-    )
-    return jsonify(iris_list)
-
-
-@app.route("/iris/<column>/equal_to")
-def get_equal_to(column):
-    """
-    Retrieve Iris rows where a column equals a value.
-
-    Path Params:
-        column (str): Column name.
-
-    Query Params:
-        value (float): Value to match (required).
-        n (int): Max number of rows (optional).
-        species (str): Filter by species (optional).
-
-    Returns:
-        200 OK: List of Iris records as JSON.
-        400 Bad Request: If parameters are invalid.
-    """
-    if not app.iris_service.validate_column(column):
-        return jsonify({"error": "Invalid column"}), 400
-
-    try:
-        species = request.args.get("species")
-        value = float(request.args.get("value"))
-        n = request.args.get("n", type=int)
-    except (TypeError, ValueError):
-        return jsonify({"error": "Invalid value parameter"}), 400
-
-    iris_list = app.iris_service.get_equal_to(column, value, n, species)
-    return jsonify(iris_list)
-
-
-@app.route("/iris/<column>/top_n")
-def get_n(column):
-    """
-    Retrieve the top N Iris rows ordered by a column.
-
-    Path Params:
-        column (str): Column name.
-
-    Query Params:
-        n (int): Number of rows to return (required).
-        order (str): "asc" or "desc" (default: "asc").
-        species (str): Filter by species (optional).
-
-    Returns:
-        200 OK: List of Iris records as JSON.
-        400 Bad Request: If parameters are invalid or missing.
-    """
-    if not app.iris_service.validate_column(column):
-        return jsonify({"error": "Invalid column"}), 400
-
+    q = float(request.args.get("quantile"))
     species = request.args.get("species")
-    n = request.args.get("n", type=int)
-    order = request.args.get("order", "asc")
-    if not n:
-        return jsonify({"error": "Missing n parameter"}), 400
-
-    iris_list = app.iris_service.get_n(column, n, order, species)
-    return jsonify(iris_list)
-
-
-@app.route("/iris/<column>/smallest")
-def get_smallest(column):
-    """
-    Retrieve the smallest value in a column.
-
-    Path Params:
-        column (str): Column name.
-
-    Query Params:
-        species (str): Filter by species (optional).
-
-    Returns:
-        200 OK: Smallest value as JSON.
-        400 Bad Request: If column is invalid.
-    """
-    if not app.iris_service.validate_column(column):
-        return jsonify({"error": "Invalid column"}), 400
-
-    species = request.args.get("species")
-    result = app.iris_service.get_smallest_value(column, species)
-    return jsonify(result)
-
-
-@app.route("/iris/<column>/largest")
-def get_largest(column):
-    """
-    Retrieve the largest value in a column.
-
-    Path Params:
-        column (str): Column name.
-
-    Query Params:
-        species (str): Filter by species (optional).
-
-    Returns:
-        200 OK: Largest value as JSON.
-        400 Bad Request: If column is invalid.
-    """
-    if not app.iris_service.validate_column(column):
-        return jsonify({"error": "Invalid column"}), 400
-
-    species = request.args.get("species")
-    result = app.iris_service.get_largest_value(column, species)
-    return jsonify(result)
-
-
-@app.route("/iris/<column>/average")
-def get_average(column):
-    """
-    Retrieve the average value of a column.
-
-    Path Params:
-        column (str): Column name.
-
-    Query Params:
-        species (str): Filter by species (optional).
-
-    Returns:
-        200 OK: Average value as JSON.
-        400 Bad Request: If column is invalid.
-    """
-    if not app.iris_service.validate_column(column):
-        return jsonify({"error": "Invalid column"}), 400
-
-    species = request.args.get("species")
-    result = app.iris_service.get_average_value(column, species)
-    return jsonify(result)
-
-
-@app.route("/iris/<column>/median")
-def get_median(column):
-    """
-    Retrieve the median value of a column.
-
-    Path Params:
-        column (str): Column name.
-
-    Query Params:
-        species (str): Filter by species (optional).
-
-    Returns:
-        200 OK: Median value as JSON.
-        400 Bad Request: If column is invalid.
-    """
-    if not app.iris_service.validate_column(column):
-        return jsonify({"error": "Invalid column"}), 400
-
-    species = request.args.get("species")
-    result = app.iris_service.get_median_value(column, species)
-    return jsonify(result)
-
-
-@app.route("/iris/<column>/quantile")
-def get_quantile(column):
-    """
-    Retrieve a quantile value from a column.
-
-    Path Params:
-        column (str): Column name.
-
-    Query Params:
-        q (float): Quantile between 0 and 1 (required).
-        species (str): Filter by species (optional).
-
-    Returns:
-        200 OK: Quantile value as JSON.
-        400 Bad Request: If column is invalid or q is missing/invalid.
-    """
-    if not app.iris_service.validate_column(column):
-        return jsonify({"error": "Invalid column"}), 400
-
-    q = request.args.get("q", type=float)
-    species = request.args.get("species")
-
-    if q is None or not 0 <= q <= 1:
-        return jsonify({"error": "Query parameter 'q' must be between 0 and 1"}), 400
-
-    result = app.iris_service.get_quantile_value(column, q, species)
-    return jsonify(result)
+    feature = request.args.get("measurement")
+    stats = app.iris_service.get_quantile(feature, q, species)
+    return jsonify(stats)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,7 @@
 from sqlalchemy import select, asc, desc, func
-from typing import List, Optional
+from typing import Dict, List, Optional
 from src.models import Species, Iris
 from src.repositories.base_repository import BaseRepository
-import numpy as np
 
 
 class IrisRepository(BaseRepository):
@@ -11,171 +10,6 @@ class IrisRepository(BaseRepository):
 
     Provides query helpers for filtering, aggregating, and creating `Iris` records.
     """
-
-    def _query_by_column(
-        self,
-        column,
-        operator: str,
-        value,
-        order: Optional[str] = None,
-        limit: Optional[int] = None,
-        species_name: Optional[str] = None
-    ) -> List[Iris]:
-        """
-        Generic helper to query Iris by column with a comparison operator.
-
-        Args:
-            column: The Iris attribute/column to filter by.
-            operator (str): One of '>', '<', '=='.
-            value: The value to compare the column against.
-            order (Optional[str]): 'asc' or 'desc' for ordering (default: None).
-            limit (Optional[int]): Maximum number of rows to return (default: None).
-            species (Optional[str]): If provided, filters rows by species name.
-
-        Returns:
-            List[Iris]: List of Iris entities matching criteria.
-
-        Raises:
-            ValueError: If operator is not one of '>', '<', '=='.
-            ValueError: If order is provided but not 'asc' or 'desc'.
-        """
-        stmt = select(Iris)
-        if species_name:
-            stmt = stmt.join(Species).where(Species.name == species_name)
-
-        # Apply filter based on operator
-        if operator == ">":
-            stmt = stmt.filter(column > value)
-        elif operator == "<":
-            stmt = stmt.filter(column < value)
-        elif operator == "==":
-            stmt = stmt.filter(column == value)
-        else:
-            raise ValueError("Operator must be one of '>', '<', '=='")
-
-        # Apply ordering if specified
-        if order:
-            if order.lower() == "asc":
-                stmt = stmt.order_by(asc(column))
-            elif order.lower() == "desc":
-                stmt = stmt.order_by(desc(column))
-            else:
-                raise ValueError("Order must be 'asc' or 'desc'")
-
-        # Apply limit if specified
-        if limit is not None:
-            stmt = stmt.limit(limit)
-
-        result = self.session.execute(stmt)
-        return list(result.scalars().all())
-
-    # ----------------- Convenience Methods -----------------
-
-    def get_all_larger_than(self, column, value: float, order: str = "asc", species_name: str = None) -> List[Iris]:
-        """
-        Retrieve all rows where column > value.
-
-        Args:
-            column: Column to compare.
-            value (float): Threshold value.
-            order (str): 'asc' or 'desc' for ordering (default: 'asc').
-            species_name (Optional[str]): If provided, filters rows by species name.
-
-        Returns:
-            List[Iris]: List of matching Iris objects.
-        """
-        return self._query_by_column(column, ">", value, order, species_name=species_name)
-
-    def get_n_larger_than(self, column, value: float, n: int, order: str = "asc", species_name: str = None) -> List[Iris]:
-        """
-        Retrieve up to `n` rows where column > value.
-
-        Args:
-            column: Column to compare.
-            value (float): Threshold value.
-            n (int): Maximum number of rows to return.
-            order (str): 'asc' or 'desc' for ordering (default: 'asc').
-            species_name (Optional[str]): If provided, filters rows by species name.
-
-        Returns:
-            List[Iris]: List of matching Iris objects.
-        """
-        return self._query_by_column(column, ">", value, order, limit=n, species_name=species_name)
-
-    def get_all_smaller_than(self, column, value: float, order: str = "asc", species_name: str = None) -> List[Iris]:
-        """
-        Retrieve all rows where column < value.
-
-        Args:
-            column: Column to compare.
-            value (float): Threshold value.
-            order (str): 'asc' or 'desc' for ordering (default: 'asc').
-            species_name (Optional[str]): If provided, filters rows by species name.
-
-        Returns:
-            List[Iris]: List of matching Iris objects.
-        """
-        return self._query_by_column(column, "<", value, order, species_name=species_name)
-
-    def get_n_smaller_than(self, column, value: float, n: int, order: str = "asc", species_name: str = None) -> List[Iris]:
-        """
-        Retrieve up to `n` rows where column < value.
-
-        Args:
-            column: Column to compare.
-            value (float): Threshold value.
-            n (int): Maximum number of rows to return.
-            order (str): 'asc' or 'desc' for ordering (default: 'asc').
-            species_name (Optional[str]): If provided, filters rows by species name.
-
-        Returns:
-            List[Iris]: List of matching Iris objects.
-        """
-        return self._query_by_column(column, "<", value, order, limit=n, species_name=species_name)
-
-    def get_all_equal_to(self, column, value: float, species_name: str = None) -> List[Iris]:
-        """
-        Retrieve all rows where column == value.
-
-        Args:
-            column: Column to compare.
-            value (float): Value to match.
-            species_name (Optional[str]): If provided, filters rows by species name.
-
-        Returns:
-            List[Iris]: List of matching Iris objects.
-        """
-        return self._query_by_column(column, "==", value, species_name=species_name)
-
-    def get_n_equal_to(self, column, value: float, n: int, species_name: str = None) -> List[Iris]:
-        """
-        Retrieve up to `n` rows where column == value.
-
-        Args:
-            column: Column to compare.
-            value (float): Value to match.
-            n (int): Maximum number of rows to return.
-            species_name (Optional[str]): If provided, filters rows by species name.
-
-        Returns:
-            List[Iris]: List of matching Iris objects.
-        """
-        return self._query_by_column(column, "==", value, limit=n, species_name=species_name)
-
-    def get_n(self, n: int, column=None, order: str = "asc", species_name: str = None) -> List[Iris]:
-        """
-        Retrieve the first `n` rows, optionally ordered by a column.
-
-        Args:
-            n (int): Number of rows to retrieve.
-            column (Optional): Column to sort by (default: Iris.id).
-            order (str): 'asc' or 'desc' if column is provided (default: 'asc').
-            species_name (Optional[str]): If provided, filters rows by species name.
-
-        Returns:
-            List[Iris]: List of retrieved Iris objects.
-        """
-        return self._query_by_column(column if column else Iris.id, ">", -float('inf'), order, limit=n, species_name=species_name)
 
     def get_all_by_species(self, species_name: str) -> List[Iris]:
         """
@@ -191,106 +25,191 @@ class IrisRepository(BaseRepository):
         result = self.session.execute(stmt)
         return list(result.scalars().all())
 
-    def get_smallest(self, column, species_name: str = None) -> Optional[float]:
-        """
-        Find smallest value in a column.
+    def get_flowers_amount(self, species_name):
+        stmt = select(func.count()).select_from(Iris).join(
+            Species).where(Species.name == species_name)
+        result = self.session.execute(stmt)
+        return result.scalar()
 
-        Args:
-            column: Column to aggregate.
-            species_name (Optional[str]): If provided, filters rows by species name.
+    def get_stats(self, column, species_name: str = None):
+        stmt = select(
+            func.avg(column).label('mean'),
+            func.min(column).label('min'),
+            func.max(column).label('max'),
+            func.stddev(column).label('std'),
+            func.percentile_cont(0.5).within_group(
+                column.asc()).label('median')
+        )
 
-        Returns:
-            Optional[float]: Smallest value, or None if no rows found.
-        """
-        stmt = select(func.min(column))
+        # Add species filter if provided
         if species_name:
-            stmt = stmt.where(Iris.species.has(name=species_name))
+            stmt = stmt.join(Species).where(Species.name == species_name)
 
-        result = self.session.execute(stmt).scalar()
-        return float(result) if result is not None else None
+        result = self.session.execute(stmt).first()
 
-    def get_largest(self, column, species_name: str = None) -> Optional[float]:
-        """
-        Find largest value in a column.
-
-        Args:
-            column: Column to aggregate.
-            species_name (Optional[str]): If provided, filters rows by species name.
-
-        Returns:
-            Optional[float]: Largest value, or None if no rows found.
-        """
-        stmt = select(func.max(column))
-        if species_name:
-            stmt = stmt.where(Iris.species.has(name=species_name))
-
-        result = self.session.execute(stmt).scalar()
-        return float(result) if result is not None else None
-
-    def get_average(self, column, species_name: str = None) -> Optional[float]:
-        """
-        Calculate average of a column.
-
-        Args:
-            column: Column to aggregate.
-            species_name (Optional[str]): If provided, filters rows by species name.
-
-        Returns:
-            Optional[float]: Average value, or None if no rows found.
-        """
-        stmt = select(func.avg(column))
-        if species_name:
-            stmt = stmt.where(Iris.species.has(name=species_name))
-
-        result = self.session.execute(stmt).scalar()
-        return float(result) if result is not None else None
-
-    def get_median(self, column, species_name: str = None) -> Optional[float]:
-        """
-        Calculate median of a column.
-
-        Args:
-            column: Column to aggregate.
-            species_name (Optional[str]): If provided, filters rows by species name.
-
-        Returns:
-            Optional[float]: Median value, or None if no rows found.
-        """
-        stmt = select(column)
-        if species_name:
-            stmt = stmt.where(Iris.species.has(name=species_name))
-
-        results = [row[0] for row in self.session.execute(stmt).all()]
-        if not results:
+        if not result or result.mean is None:
             return None
-        return float(np.median(results))
 
-    def get_quantile(self, column, q: float, species_name: str = None) -> Optional[float]:
+        return {
+            "mean": float(result.mean),
+            "min": float(result.min),
+            "max": float(result.max),
+            "std": float(result.std) if result.std is not None else 0.0,
+            "median": float(result.median) if result.median is not None else None
+        }
+
+    def get_flowers(self, params, fields, sort_by, sort_order) -> List[Iris]:
+        stmt = select(Iris).join(Species)
+
+        stmt = self._apply_filters(stmt, params, fields)
+        stmt = self._apply_sorting(stmt, sort_by, sort_order)
+
+        if params["limit"]:
+            stmt = stmt.limit(params["limit"])
+
+        result = self.session.execute(stmt)
+        flowers = list(result.scalars().all())
+        return flowers
+
+    def get_flower_by_id(self, id: int) -> Iris:
+        stmt = select(Iris).where(Iris.id == id)
+        result = self.session.execute(stmt)
+
+        return result.scalar()
+
+    # In your IrisRepository class
+
+    def update_flower(self, flower_id: int, update_data: Dict[str, any]) -> Optional[Iris]:
         """
-        Calculate quantile of a column.
+        Update an existing iris flower record.
 
         Args:
-            column: Column to aggregate.
-            q (float): Quantile (0 <= q <= 1).
-            species_name (Optional[str]): If provided, filters rows by species name.
+            flower_id (int): ID of the flower to update
+            update_data (Dict): Dictionary of fields to update
 
         Returns:
-            Optional[float]: Quantile value, or None if no rows found.
-
-        Raises:
-            ValueError: If `q` is outside the range [0, 1].
+            Optional[Iris]: Updated Iris object, or None if not found
         """
-        if not 0 <= q <= 1:
-            raise ValueError("Quantile must be between 0 and 1")
-
-        stmt = select(column)
-        if species_name:
-            stmt = stmt.where(Iris.species.has(name=species_name))
-
-        results = [row[0] for row in self.session.execute(stmt).all()]
-        if not results:
+        # First get the existing flower
+        flower = self.session.get(Iris, flower_id)
+        if flower is None:
             return None
-        return float(np.quantile(results, q))
+
+        # Update basic fields
+        if 'sepal_length' in update_data:
+            flower.sepal_length = update_data['sepal_length']
+        if 'sepal_width' in update_data:
+            flower.sepal_width = update_data['sepal_width']
+        if 'petal_length' in update_data:
+            flower.petal_length = update_data['petal_length']
+        if 'petal_width' in update_data:
+            flower.petal_width = update_data['petal_width']
+
+        # Update species if provided
+        if 'species' in update_data:
+            species_name = update_data['species'].lower()
+            # Find or create species
+            species = self.session.execute(
+                select(Species).where(Species.name == species_name)
+            ).scalar_one_or_none()
+
+            if not species:
+                species = Species(name=species_name)
+                self.session.add(species)
+                self.session.flush()  # Flush to get the ID
+
+            flower.species_id = species.id
+            flower.species = species  # Assign the species object directly
+
+        # Recalculate derived fields if any measurements changed
+        measurement_fields = ['sepal_length',
+                              'sepal_width', 'petal_length', 'petal_width']
+        if any(field in update_data for field in measurement_fields):
+            flower.sepal_area = flower.sepal_length * flower.sepal_width
+
+            flower.petal_area = flower.petal_length * flower.petal_width
+
+            flower.sepal_to_petal_area_ratio = flower.sepal_area / \
+                flower.petal_area if flower.petal_area != 0 else None
+            flower.sepal_to_petal_length_ratio = flower.sepal_length / \
+                flower.petal_length if flower.petal_length != 0 else None
+            flower.sepal_to_petal_width_ratio = flower.sepal_width / \
+                flower.petal_width if flower.petal_width != 0 else None
+
+        self.session.commit()
+        self.session.refresh(flower)
+        return flower
+
+    def delete_flower_by_id(self, flower_id: int) -> bool:
+        """
+        Delete an iris flower record by ID.
+
+        Args:
+            flower_id (int): ID of the flower to delete
+
+        Returns:
+            bool: True if deleted, False if not found
+        """
+        flower = self.session.get(Iris, flower_id)
+        if flower is None:
+            return None
+
+        self.session.delete(flower)
+        self.session.commit()
+        return True
+
+    def _apply_filters(self, stmt, params: Dict[str, str], fields: List[str]):
+        """Apply all filters to the SQLAlchemy statement"""
+
+        # Species filter
+        if 'species' in params:
+            species_name = params['species'].lower()
+            stmt = stmt.where(Species.name == species_name)
+
+        # Apply range filters
+        for field in fields:
+            min_key = f'min_{field}'
+            max_key = f'max_{field}'
+
+            if min_key in params:
+                try:
+                    min_val = float(params[min_key])
+                    stmt = stmt.where(fields[field] >= min_val)
+                except ValueError:
+                    raise ValueError(
+                        f"Invalid value for {min_key}. Must be a number")
+
+            if max_key in params:
+                try:
+                    max_val = float(params[max_key])
+                    stmt = stmt.where(fields[field] <= max_val)
+                except ValueError:
+                    raise ValueError(
+                        f"Invalid value for {max_key}. Must be a number")
+
+        return stmt
+
+    def _apply_sorting(self, stmt, sort_by: str, sort_order: str):
+        """Apply sorting to the SQLAlchemy statement"""
+
+        # Handle species sorting (requires join)
+        if not sort_by:
+            pass
+        elif sort_by == 'species':
+            stmt = stmt.join(Species)
+            sort_column = Species.name
+        else:
+            sort_column = getattr(Iris, sort_by)
+
+        # Apply ordering
+        if not sort_order:
+            pass
+        elif sort_order == 'asc':
+            stmt = stmt.order_by(asc(sort_column))
+        else:
+            stmt = stmt.order_by(desc(sort_column))
+
+        return stmt
 
     def create_iris(self, species_name: str, sepal_length: float, sepal_width: float, petal_length: float, petal_width: float) -> Iris:
         """
